@@ -7,15 +7,15 @@ class Allocator;
 class AllocatorNode;
 
 class Pointer {
-    friend class Allocator;
-    
+  friend class Allocator;
+
 public:
-    Pointer();
-    void* get() const;
-    
+  Pointer();
+  void *get() const;
+
 private:
-    Pointer(AllocatorNode** inner_ptr);
-    AllocatorNode** inner_ptr;
+  Pointer(AllocatorNode **inner_ptr);
+  AllocatorNode **inner_ptr;
 };
 
-#endif //ALLOCATOR_POINTER
+#endif // ALLOCATOR_POINTER
