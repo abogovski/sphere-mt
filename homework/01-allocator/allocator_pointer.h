@@ -4,10 +4,18 @@
 // Forward declaration. Do not include real class definition
 // to avoid expensive macros calculations and increase compile speed
 class Allocator;
+class AllocatorNode;
 
 class Pointer {
+    friend class Allocator;
+    
 public:
-    void* get() const { return 0; }
+    Pointer();
+    void* get() const;
+    
+private:
+    Pointer(AllocatorNode** inner_ptr);
+    AllocatorNode** inner_ptr;
 };
 
 #endif //ALLOCATOR_POINTER

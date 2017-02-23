@@ -4,8 +4,9 @@
 #include <stdexcept>
 
 enum class AllocErrorType {
-    InvalidFree,
     NoMemory,
+    Internal,
+    InvalidOperation
 };
 
 class AllocError : std::runtime_error {
@@ -21,4 +22,4 @@ public:
     AllocErrorType getType() const { return type; }
 };
 
-#endif //ALLOCATOR_ERROR
+#endif // ALLOCATOR_ERROR
