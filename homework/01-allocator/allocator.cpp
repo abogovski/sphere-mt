@@ -56,7 +56,7 @@ Pointer Allocator::alloc(size_t N) {
   if (!N) {
     return Pointer();
   }
-  
+
   AllocatorNode **ptr = place_ptr();
   *ptr = force_find_free_node(N);
   alloc_node(*ptr, N);
@@ -158,7 +158,7 @@ AllocatorNode **Allocator::place_ptr() {
     throw AllocError(AllocErrorType::NoMemory, "ptr placement failed");
   }
 
-  if (last_node->length() > 0){
+  if (last_node->length() > 0) {
     last_node->setLength(last_node->length() - 1);
   }
 

@@ -7,6 +7,9 @@ struct AllocatorNode {
   size_t head;
 
 public:
+  AllocatorNode(const AllocatorNode &) = delete;
+  AllocatorNode &operator=(const AllocatorNode &) = delete;
+
   void setUsage(bool flag);
   void setLength(size_t length);
 
@@ -32,6 +35,8 @@ public:
   static constexpr size_t pageSize = sizeof(size_t);
 
   Allocator(void *base, size_t size);
+  Allocator(const Allocator &) = delete;
+  Allocator &operator=(const Allocator &) = delete;
 
   /**
    * TODO: semantics
