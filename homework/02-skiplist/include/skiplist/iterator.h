@@ -55,7 +55,7 @@ public:
   };
 
   virtual Iterator operator++(int) {
-    auto it = Iterator(pCurrent);
+    Iterator it(pCurrent);
     pCurrent = &pCurrent->next();
     return it;
   };

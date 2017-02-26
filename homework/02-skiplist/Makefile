@@ -6,7 +6,7 @@ TEST_SRC = test/skiplist_test.cpp
 all: tests.done
 
 skiplist_test: $(TEST_SRC) $(HDR)
-	g++ -O1 -g -std=c++11 -o skiplist_test -I include -I../thirdparty $(TEST_SRC) $(TEST_FILES) -lpthread -lbfd
+	g++ -O1 -g -std=c++11 -o skiplist_test -I include -I../thirdparty $(TEST_SRC) $(TEST_FILES) -L/lib/x86_64-linux-gnu -lpthread -lbfd -ldl
 
 tests.done: skiplist_test
 	./skiplist_test

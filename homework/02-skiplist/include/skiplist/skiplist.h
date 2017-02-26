@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <type_traits>
 
 /**
  * Skiplist interface
@@ -25,6 +26,8 @@ public:
    * Creates new empty skiplist
    */
   SkipList() {
+    static_assert(std::is_copy_constructible<Key>(), "");
+
     pHead = new DataNode<Key, Value>(nullptr, nullptr);
     pTail = new DataNode<Key, Value>(nullptr, nullptr);
     pHead->pNext = pTail;
@@ -55,7 +58,7 @@ public:
     delIdx(pTailIdx);
 
     // Data cleanup
-    for (auto pData = pHead; pData != pTail; pData = delData(pData)) {
+    for (auto pData = pHead; pData != pTail; pData = delData(pData, true)) {
     }
     delData(pTail);
   }
@@ -76,7 +79,7 @@ public:
       pp.pData->pValue = &value;
       return old_value;
     }
-    put_new(pp, new DataNode<Key, Value>(&key, &value));
+    put_new(pp, key, value);
     return nullptr;
   };
 
@@ -97,7 +100,7 @@ public:
       auto data_node = pp.pData->pNext;
       return data_node->pValue;
     }
-    put_new(pp, new DataNode<Key, Value>(&key, &value));
+    put_new(pp, key, value);
     return nullptr;
   };
 
@@ -168,8 +171,9 @@ public:
     return Iterator<Key, Value>(pTail);
   };
 
-  virtual void gvdump_datanode(std::ofstream &of,
-                               DataNode<Key, Value> *pData) const {
+private:
+  static void gvdump_datanode(std::ofstream &of,
+                              const DataNode<Key, Value> *pData) {
     of << "\"" << (void *)pData << "_";
     if (pData->pKey != nullptr) {
       of << *pData->pKey;
@@ -179,18 +183,21 @@ public:
     of << "\"";
   }
 
+public:
   virtual void gvdump(std::string fname) const {
     using std::endl;
     std::ofstream of(fname);
     of << "digraph SkipList {" << endl;
     for (size_t i = 0; i < MAXHEIGHT; ++i) {
+      of << "  // idx layer " << i << endl;
       for (auto pIdx = aHeadIdx[i]; pIdx != pTailIdx; pIdx = pIdx->pNext) {
         of << "  \"" << (void *)pIdx << "\"->\"" << (void *)pIdx->pNext << "\""
            << endl;
         of << "  \"" << (void *)pIdx << "\"->\"" << (void *)pIdx->pDown << "\""
            << endl;
-        of << "  \"" << (void *)pIdx << "\"->\"" << (void *)pIdx->pRoot << "\""
-           << endl;
+        // of << "  \"" << (void *)pIdx << "\"->\"" << (void *)pIdx->pRoot <<
+        // "\""
+        //   << endl;
       }
       of << "  { rank=same; ";
       for (auto pIdx = aHeadIdx[i]; pIdx != pTailIdx; pIdx = pIdx->pNext) {
@@ -199,6 +206,7 @@ public:
       of << "  }" << endl << endl;
     }
 
+    of << "  // data layer" << endl;
     for (auto pData = pHead; pData != pTail; pData = pData->pNext) {
       of << "  ";
       gvdump_datanode(of, pData);
@@ -211,12 +219,12 @@ public:
 
     of << "  { rank=same; ";
     for (auto pData = pHead; pData != pTail; pData = pData->pNext) {
-      gvdump_datanode(of, pData);
-      of << " ";
+      of << "\"" << (void *)pData << "\" ";
     }
-    of << "  }" << endl;
-    of << "  pTailIdx_" << (void *)pTailIdx << endl;
-    of << "  pTail_" << (void *)pTail << endl;
+    of << "\"" << (void *)pTail << "\"  }" << endl;
+
+    of << "  \"pTailIdx_" << (void *)pTailIdx << "\"" << endl;
+    of << "  \"pTail_" << (void *)pTail << "\"" << endl;
     of << "}" << endl;
   };
 
@@ -287,8 +295,10 @@ private:
     return found || (cur != pTail && !Less()(key, *curKey));
   }
 
-  void put_new(const Path &prev_path, DataNode<Key, Value> *pData) {
+  void put_new(const Path &prev_path, const Key &key, Value &value) {
     assert(prev_path.match_at == -1);
+
+    auto pData = new DataNode<Key, Value>(new Key(key), &value);
 
     pData->pNext = prev_path.pData->pNext;
     prev_path.pData->pNext = pData;
@@ -314,8 +324,11 @@ private:
     return pNextIdx;
   }
 
-  DataNode<Key, Value> *delData(DataNode<Key, Value> *pData) const {
+  DataNode<Key, Value> *delData(DataNode<Key, Value> *pData,
+                                bool delete_Value = false) const {
     DataNode<Key, Value> *pNextData = pData->pNext;
+    delete pData->pKey;
+
     pData->pKey = nullptr;
     pData->pValue = nullptr;
     pData->pNext = nullptr;
