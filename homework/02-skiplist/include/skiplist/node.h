@@ -5,8 +5,7 @@
 /**
  * Skiplist Node
  */
-template <class Key, class Value>
-class Node {
+template <class Key, class Value> class Node {
 public:
   Node() {}
   virtual ~Node() {}
@@ -14,43 +13,40 @@ public:
   /**
    * Return key assosiated with the given node
    */
-  virtual const Key& key() const = 0;
+  virtual const Key &key() const = 0;
 
   /**
    * Returns value assosiated with the given node
    */
-  virtual Value& value() = 0;
+  virtual Value &value() = 0;
 
   /**
    * Returns next node in the sequence
    */
-  virtual Node & next() const = 0;
+  virtual Node &next() const = 0;
 };
 
 /**
  * Skiplist data nodes that holds actual key/value pair
  */
-template<class Key, class Value>
-class DataNode : public Node<Key,Value> {
-  template<class, class, size_t, class>
-  friend class SkipList;
-  
+template <class Key, class Value> class DataNode : public Node<Key, Value> {
+  template <class, class, size_t, class> friend class SkipList;
+
 private:
   const Key *pKey;
   Value *pValue;
-  DataNode<Key,Value> *pNext;
+  DataNode<Key, Value> *pNext;
 
 public:
   DataNode(const Key *pKey, Value *pValue)
-    : pKey(pKey), pValue(pValue), pNext(nullptr) {
-  }
+      : pKey(pKey), pValue(pValue), pNext(nullptr) {}
 
   virtual ~DataNode() {}
 
   /**
    * Return key assosiated with the given node
    */
-  virtual const Key& key() const {
+  virtual const Key &key() const {
     assert(pKey != nullptr);
     return *pKey;
   }
@@ -58,7 +54,7 @@ public:
   /**
    * Returns value assosiated with the given node
    */
-  virtual Value& value() {
+  virtual Value &value() {
     assert(pValue != nullptr);
     return *pValue;
   };
@@ -66,42 +62,35 @@ public:
   /**
    * Returns next node in the sequence
    */
-  virtual Node<Key, Value>& next() const {
-    return *pNext;
-  };
+  virtual Node<Key, Value> &next() const { return *pNext; };
 
   /**
    * Set next pointer
    */
-  virtual void next(DataNode<Key, Value>* next) {
-    pNext = next;
-  };
+  virtual void next(DataNode<Key, Value> *next) { pNext = next; };
 };
 
 /**
  * Skiplist index nodes that keep references onto data layer
  */
-template<class Key, class Value>
-class IndexNode : public Node<Key,Value> {
-  template<class, class, size_t, class>
-  friend class SkipList;
-  
+template <class Key, class Value> class IndexNode : public Node<Key, Value> {
+  template <class, class, size_t, class> friend class SkipList;
+
 private:
-  Node<Key,Value>  *pDown;
-  DataNode<Key,Value>  *pRoot;
-  IndexNode<Key,Value>  *pNext;
+  Node<Key, Value> *pDown;
+  DataNode<Key, Value> *pRoot;
+  IndexNode<Key, Value> *pNext;
 
 public:
-  IndexNode(Node<Key,Value> *down, DataNode<Key,Value> *root)
-    : pDown(down), pRoot(root), pNext(nullptr) {
-  }
+  IndexNode(Node<Key, Value> *down, DataNode<Key, Value> *root)
+      : pDown(down), pRoot(root), pNext(nullptr) {}
 
   virtual ~IndexNode() {}
 
   /**
    * Return key assosiated with the given node
    */
-  virtual const Key& key() const {
+  virtual const Key &key() const {
     assert(pRoot != nullptr);
     return pRoot->key();
   }
@@ -109,7 +98,7 @@ public:
   /**
    * Returns value assosiated with the given node
    */
-  virtual Value& value() {
+  virtual Value &value() {
     assert(pRoot != nullptr);
     return pRoot->value();
   };
@@ -117,15 +106,11 @@ public:
   /**
    * Returns next node in the sequence
    */
-  virtual Node<Key, Value>& next() const {
-    return *pNext;
-  };
+  virtual Node<Key, Value> &next() const { return *pNext; };
 
   /**
    * Set next pointer
    */
-  virtual void next(IndexNode<Key, Value>* next) {
-    pNext = next;
-  };
+  virtual void next(IndexNode<Key, Value> *next) { pNext = next; };
 };
 #endif // __NODE_H

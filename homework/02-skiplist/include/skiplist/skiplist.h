@@ -1,17 +1,17 @@
 #ifndef __SKIPLIST_H
 #define __SKIPLIST_H
-#include <functional>
-#include <fstream>
+#include "iterator.h"
+#include "node.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include "node.h"
-#include "iterator.h"
+#include <fstream>
+#include <functional>
 
 /**
  * Skiplist interface
  */
-template<class Key, class Value, size_t MAXHEIGHT, class Less = std::less<Key>>
+template <class Key, class Value, size_t MAXHEIGHT, class Less = std::less<Key>>
 class SkipList {
 private:
   DataNode<Key, Value> *pHead;
@@ -25,8 +25,8 @@ public:
    * Creates new empty skiplist
    */
   SkipList() {
-    pHead   = new DataNode<Key, Value>(nullptr, nullptr);
-    pTail   = new DataNode<Key, Value>(nullptr, nullptr);
+    pHead = new DataNode<Key, Value>(nullptr, nullptr);
+    pTail = new DataNode<Key, Value>(nullptr, nullptr);
     pHead->pNext = pTail;
 
     Node<Key, Value> *below = pHead;
@@ -41,7 +41,7 @@ public:
   /**
    * Disable copy constructor
    */
-  SkipList(const SkipList& that) = delete;
+  SkipList(const SkipList &that) = delete;
 
   /**
    * Destructor
@@ -49,12 +49,14 @@ public:
   virtual ~SkipList() {
     // Idx cleanup
     for (size_t i = 0; i < MAXHEIGHT; i++) {
-      for (auto pIdx = aHeadIdx[i]; pIdx != pTailIdx; pIdx = delIdx(pIdx)) {}
+      for (auto pIdx = aHeadIdx[i]; pIdx != pTailIdx; pIdx = delIdx(pIdx)) {
+      }
     }
     delIdx(pTailIdx);
 
     // Data cleanup
-    for (auto pData = pHead; pData != pTail; pData = delData(pData)) {}
+    for (auto pData = pHead; pData != pTail; pData = delData(pData)) {
+    }
     delData(pTail);
   }
 
@@ -66,7 +68,7 @@ public:
    * @param value to be added
    * @return old value for the given key or nullptr
    */
-  virtual Value* Put(const Key& key, Value& value) {
+  virtual Value *Put(const Key &key, Value &value) {
     Path pp;
     if (search(key, pp)) {
       auto data_node = pp.pData->pNext;
@@ -74,7 +76,7 @@ public:
       pp.pData->pValue = &value;
       return old_value;
     }
-    put_new(pp, new DataNode<Key,Value>(&key, &value));
+    put_new(pp, new DataNode<Key, Value>(&key, &value));
     return nullptr;
   };
 
@@ -89,13 +91,13 @@ public:
    * @param value to be added
    * @return existing value for the given key or nullptr
    */
-  virtual Value* PutIfAbsent(const Key& key, Value& value) {
+  virtual Value *PutIfAbsent(const Key &key, Value &value) {
     Path pp;
     if (search(key, pp)) {
       auto data_node = pp.pData->pNext;
       return data_node->pValue;
     }
-    put_new(pp, new DataNode<Key,Value>(&key, &value));
+    put_new(pp, new DataNode<Key, Value>(&key, &value));
     return nullptr;
   };
 
@@ -106,10 +108,10 @@ public:
    * @param key to find
    * @return value associated with given key or nullptr
    */
-  virtual Value* Get(const Key& key) const {
+  virtual Value *Get(const Key &key) const {
     Path pp;
     volatile bool found = search(key, pp);
-    return found? pp.pData->pNext->pValue: nullptr;
+    return found ? pp.pData->pNext->pValue : nullptr;
   };
 
   /**
@@ -120,7 +122,7 @@ public:
    * @param key to be added
    * @return value for the removed key or nullptr
    */
-  virtual Value* Delete(const Key& key) {
+  virtual Value *Delete(const Key &key) {
     Path pp;
     if (search(key, pp)) {
       for (int i = 0; i <= pp.match_at; ++i) {
@@ -140,15 +142,13 @@ public:
   /**
    * Same as Get
    */
-  virtual Value* operator[](const Key& key) const {
-    return Get(key);
-  };
+  virtual Value *operator[](const Key &key) const { return Get(key); };
 
   /**
    * Return iterator onto very first key in the skiplist
    */
   virtual Iterator<Key, Value> cbegin() const {
-    return Iterator<Key,Value>(pHead->pNext);
+    return Iterator<Key, Value>(pHead->pNext);
   };
 
   /**
@@ -158,18 +158,19 @@ public:
   virtual Iterator<Key, Value> cfind(const Key &min) const {
     Path pp;
     search(min, pp);
-    return Iterator<Key,Value>(pp.pData->pNext);
+    return Iterator<Key, Value>(pp.pData->pNext);
   };
 
   /**string
    * Returns iterator on the skiplist tail
    */
   virtual Iterator<Key, Value> cend() const {
-    return Iterator<Key,Value>(pTail);
+    return Iterator<Key, Value>(pTail);
   };
 
-  virtual void gvdump_datanode(std::ofstream& of, DataNode<Key,Value>* pData) const {
-    of << "\"" << (void*)pData << "_";
+  virtual void gvdump_datanode(std::ofstream &of,
+                               DataNode<Key, Value> *pData) const {
+    of << "\"" << (void *)pData << "_";
     if (pData->pKey != nullptr) {
       of << *pData->pKey;
     } else {
@@ -184,13 +185,16 @@ public:
     of << "digraph SkipList {" << endl;
     for (size_t i = 0; i < MAXHEIGHT; ++i) {
       for (auto pIdx = aHeadIdx[i]; pIdx != pTailIdx; pIdx = pIdx->pNext) {
-        of << "  \"" << (void*)pIdx << "\"->\""  <<  (void*)pIdx->pNext << "\"" << endl;
-        of << "  \"" << (void*)pIdx << "\"->\""  <<  (void*)pIdx->pDown << "\"" << endl;
-        of << "  \"" << (void*)pIdx << "\"->\""  <<  (void*)pIdx->pRoot << "\"" << endl;
+        of << "  \"" << (void *)pIdx << "\"->\"" << (void *)pIdx->pNext << "\""
+           << endl;
+        of << "  \"" << (void *)pIdx << "\"->\"" << (void *)pIdx->pDown << "\""
+           << endl;
+        of << "  \"" << (void *)pIdx << "\"->\"" << (void *)pIdx->pRoot << "\""
+           << endl;
       }
       of << "  { rank=same; ";
       for (auto pIdx = aHeadIdx[i]; pIdx != pTailIdx; pIdx = pIdx->pNext) {
-        of << "\"" << (void*)pIdx << "\" ";
+        of << "\"" << (void *)pIdx << "\" ";
       }
       of << "  }" << endl << endl;
     }
@@ -201,7 +205,8 @@ public:
       of << "->";
       gvdump_datanode(of, pData->pNext);
       of << endl;
-      of << "  \"" << (void*)pData << "\"->\""  <<  (void*)pData->pNext << "\"" << endl;
+      of << "  \"" << (void *)pData << "\"->\"" << (void *)pData->pNext << "\""
+         << endl;
     }
 
     of << "  { rank=same; ";
@@ -210,61 +215,62 @@ public:
       of << " ";
     }
     of << "  }" << endl;
-    of << "  pTailIdx_" << (void*)pTailIdx << endl;
-    of << "  pTail_" << (void*)pTail << endl;
+    of << "  pTailIdx_" << (void *)pTailIdx << endl;
+    of << "  pTail_" << (void *)pTail << endl;
     of << "}" << endl;
   };
 
 private:
   struct Path {
-      IndexNode<Key,Value>* aIdx[MAXHEIGHT];
-      int match_at;
-      DataNode<Key, Value>* pData;
+    IndexNode<Key, Value> *aIdx[MAXHEIGHT];
+    int match_at;
+    DataNode<Key, Value> *pData;
 
-      void reset() {
-          std::fill_n(aIdx, MAXHEIGHT, nullptr);
-          match_at = -1;
-          pData = nullptr;
-      }
+    void reset() {
+      std::fill_n(aIdx, MAXHEIGHT, nullptr);
+      match_at = -1;
+      pData = nullptr;
+    }
   };
 
-  bool search(const Key& key, Path& prev_path) const {
+  bool search(const Key &key, Path &prev_path) const {
     prev_path.reset();
 
     // iterate over index nodes
     bool found = false;
-    const Key* curKey = nullptr;
+    const Key *curKey = nullptr;
     IndexNode<Key, Value> *prevIdx = nullptr;
     IndexNode<Key, Value> *curIdx = aHeadIdx[MAXHEIGHT - 1];
 
-    for (int i = MAXHEIGHT - 1; i >= 0; ) {
+    for (int i = MAXHEIGHT - 1; i >= 0;) {
       // move forward
       do {
         prevIdx = curIdx;
         curIdx = curIdx->pNext;
         if (curIdx == pTailIdx) {
-            break;
+          break;
         }
         curKey = curIdx->pRoot->pKey;
       } while (Less()(*curKey, key));
 
       // if not found yet, check for exact match
       if (!found && curIdx != pTailIdx && !Less()(key, *curKey)) {
-          prev_path.match_at = i;
-          found = true;
+        prev_path.match_at = i;
+        found = true;
       }
 
       // move down
       prev_path.aIdx[i--] = prevIdx;
       if (i >= 0) {
-        curIdx = dynamic_cast<IndexNode<Key,Value>*>(prevIdx->pDown);
+        curIdx = dynamic_cast<IndexNode<Key, Value> *>(prevIdx->pDown);
         assert(curIdx != nullptr);
       }
     }
 
     // iterate over data nodes
     DataNode<Key, Value> *prev = nullptr;
-    DataNode<Key, Value> *cur = dynamic_cast<DataNode<Key, Value>*>(prevIdx->pDown);
+    DataNode<Key, Value> *cur =
+        dynamic_cast<DataNode<Key, Value> *>(prevIdx->pDown);
     assert(cur != nullptr);
     assert(cur == prevIdx->pRoot);
 
@@ -281,27 +287,25 @@ private:
     return found || (cur != pTail && !Less()(key, *curKey));
   }
 
-  void put_new(const Path& prev_path, DataNode<Key, Value>* pData) {
+  void put_new(const Path &prev_path, DataNode<Key, Value> *pData) {
     assert(prev_path.match_at == -1);
 
     pData->pNext = prev_path.pData->pNext;
     prev_path.pData->pNext = pData;
 
-    Node<Key, Value>* below = pData;
+    Node<Key, Value> *below = pData;
     for (size_t i = 0; i < MAXHEIGHT && flip(); ++i) {
-      auto pIdx = new IndexNode<Key,Value>(below, pData);
+      auto pIdx = new IndexNode<Key, Value>(below, pData);
       pIdx->pNext = prev_path.aIdx[i]->pNext;
       prev_path.aIdx[i]->pNext = pIdx;
       below = pIdx;
     }
   }
 
-  bool flip() const {
-    return rand() & 1;
-  }
+  bool flip() const { return rand() & 1; }
 
-  IndexNode<Key, Value>* delIdx(IndexNode<Key, Value>* pIdx) const {
-    IndexNode<Key, Value>* pNextIdx = pIdx->pNext;
+  IndexNode<Key, Value> *delIdx(IndexNode<Key, Value> *pIdx) const {
+    IndexNode<Key, Value> *pNextIdx = pIdx->pNext;
     pIdx->pDown = nullptr;
     pIdx->pRoot = nullptr;
     pIdx->pNext = nullptr;
@@ -310,8 +314,8 @@ private:
     return pNextIdx;
   }
 
-  DataNode<Key, Value>* delData(DataNode<Key, Value>* pData) const {
-    DataNode<Key, Value>* pNextData = pData->pNext;
+  DataNode<Key, Value> *delData(DataNode<Key, Value> *pData) const {
+    DataNode<Key, Value> *pNextData = pData->pNext;
     pData->pKey = nullptr;
     pData->pValue = nullptr;
     pData->pNext = nullptr;

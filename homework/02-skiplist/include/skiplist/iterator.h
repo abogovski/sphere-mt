@@ -1,58 +1,55 @@
 #ifndef __ITERATOR_H
 #define __ITERATOR_H
+#include "node.h"
 #include <cassert>
 #include <exception>
-#include "node.h"
 
 /**
  * Skiplist const iterator
  */
-template<class Key, class Value>
-class Iterator {
+template <class Key, class Value> class Iterator {
 private:
   Node<Key, Value> *pCurrent;
 
 public:
-  Iterator(Node<Key,Value> *p) : pCurrent(p) {}
+  Iterator(Node<Key, Value> *p) : pCurrent(p) {}
   virtual ~Iterator() {}
 
-  virtual const Key& key() const {
+  virtual const Key &key() const {
     assert(pCurrent != nullptr);
     return pCurrent->key();
   };
 
-  virtual const Value& value() const {
+  virtual const Value &value() const {
     assert(pCurrent != nullptr);
     return pCurrent->value();
   };
 
-  virtual const Value& operator*() {
+  virtual const Value &operator*() {
     assert(pCurrent != nullptr);
     return pCurrent->value();
   };
 
-  virtual const Value& operator->() {
+  virtual const Value &operator->() {
     assert(pCurrent != nullptr);
     return pCurrent->value();
   };
 
   virtual bool operator==(const Iterator &it) const {
-    typedef DataNode<Key,Value>* data_ptr_t;
+    typedef DataNode<Key, Value> *data_ptr_t;
     assert(dynamic_cast<data_ptr_t>(pCurrent) != nullptr);
     assert(dynamic_cast<data_ptr_t>(it.pCurrent) != nullptr);
     return pCurrent == it.pCurrent;
   };
 
-  virtual bool operator!=(const Iterator &it) const {
-    return !operator==(it);
-  };
+  virtual bool operator!=(const Iterator &it) const { return !operator==(it); };
 
-  virtual Iterator& operator=(const Iterator &it) {
+  virtual Iterator &operator=(const Iterator &it) {
     pCurrent = it.pCurrent;
     return *this;
   };
 
-  virtual Iterator& operator++() {
+  virtual Iterator &operator++() {
     pCurrent = &pCurrent->next();
     return *this;
   };
