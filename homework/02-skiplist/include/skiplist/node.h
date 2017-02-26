@@ -24,7 +24,7 @@ public:
   /**
    * Returns next node in the sequence
    */
- virtual Node & next() const = 0;
+  virtual Node & next() const = 0;
 };
 
 /**
@@ -32,13 +32,16 @@ public:
  */
 template<class Key, class Value>
 class DataNode : public Node<Key,Value> {
+  template<class, class, size_t, class>
+  friend class SkipList;
+  
 private:
-  const Key   *pKey;
-  const Value *pValue;
-  DataNode<Key,Value>  *pNext;
+  const Key *pKey;
+  Value *pValue;
+  DataNode<Key,Value> *pNext;
 
 public:
-  DataNode(const Key *pKey, const Value *pValue)
+  DataNode(const Key *pKey, Value *pValue)
     : pKey(pKey), pValue(pValue), pNext(nullptr) {
   }
 
@@ -80,13 +83,16 @@ public:
  */
 template<class Key, class Value>
 class IndexNode : public Node<Key,Value> {
+  template<class, class, size_t, class>
+  friend class SkipList;
+  
 private:
   Node<Key,Value>  *pDown;
-  Node<Key,Value>  *pRoot;
+  DataNode<Key,Value>  *pRoot;
   IndexNode<Key,Value>  *pNext;
 
 public:
-  IndexNode(Node<Key,Value> *down, Node<Key,Value> *root)
+  IndexNode(Node<Key,Value> *down, DataNode<Key,Value> *root)
     : pDown(down), pRoot(root), pNext(nullptr) {
   }
 

@@ -1,6 +1,7 @@
 #ifndef __ITERATOR_H
 #define __ITERATOR_H
 #include <cassert>
+#include <exception>
 #include "node.h"
 
 /**
@@ -35,25 +36,31 @@ public:
     return pCurrent->value();
   };
 
-  virtual bool operator==(const Iterator &) const {
-    return false;
+  virtual bool operator==(const Iterator &it) const {
+    typedef DataNode<Key,Value>* data_ptr_t;
+    assert(dynamic_cast<data_ptr_t>(pCurrent) != nullptr);
+    assert(dynamic_cast<data_ptr_t>(it.pCurrent) != nullptr);
+    return pCurrent == it.pCurrent;
   };
 
-  virtual bool operator!=(const Iterator &) const {
-    return false;
+  virtual bool operator!=(const Iterator &it) const {
+    return !operator==(it);
   };
 
-
-  virtual Iterator& operator=(const Iterator &) {
+  virtual Iterator& operator=(const Iterator &it) {
+    pCurrent = it.pCurrent;
     return *this;
   };
 
   virtual Iterator& operator++() {
+    pCurrent = &pCurrent->next();
     return *this;
   };
 
-  virtual Iterator& operator++(int) {
-    return *this;
+  virtual Iterator operator++(int) {
+    auto it = Iterator(pCurrent);
+    pCurrent = &pCurrent->next();
+    return it;
   };
 };
 
