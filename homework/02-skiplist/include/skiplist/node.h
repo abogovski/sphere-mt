@@ -5,7 +5,7 @@
 /**
  * Skiplist Node
  */
-template<class Key, class Value>
+template <class Key, class Value>
 class Node {
 public:
   Node() {}
@@ -19,7 +19,7 @@ public:
   /**
    * Returns value assosiated with the given node
    */
-  virtual const Value& value() const = 0;
+  virtual Value& value() = 0;
 
   /**
    * Returns next node in the sequence
@@ -58,7 +58,7 @@ public:
   /**
    * Returns value assosiated with the given node
    */
-  virtual const Value& value() const {
+  virtual Value& value() {
     assert(pValue != nullptr);
     return *pValue;
   };
@@ -66,14 +66,14 @@ public:
   /**
    * Returns next node in the sequence
    */
-  virtual Node<Key,Value> & next() const {
+  virtual Node<Key, Value>& next() const {
     return *pNext;
   };
 
   /**
    * Set next pointer
    */
-  virtual void next(DataNode<Key, Value> *next) {
+  virtual void next(DataNode<Key, Value>* next) {
     pNext = next;
   };
 };
@@ -109,7 +109,7 @@ public:
   /**
    * Returns value assosiated with the given node
    */
-  virtual const Value& value() const {
+  virtual Value& value() {
     assert(pRoot != nullptr);
     return pRoot->value();
   };
@@ -117,14 +117,14 @@ public:
   /**
    * Returns next node in the sequence
    */
-  virtual Node<Key,Value> & next() const {
+  virtual Node<Key, Value>& next() const {
     return *pNext;
   };
 
   /**
    * Set next pointer
    */
-  virtual void next(IndexNode<Key, Value> *next) {
+  virtual void next(IndexNode<Key, Value>* next) {
     pNext = next;
   };
 };
