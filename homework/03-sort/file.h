@@ -2,58 +2,50 @@
 #define FILE_H_INCLUDED
 
 #include "config.h"
-#include <sstream>
-#include <string>
-#include <vector>
-#include <cstdio>
-#include <cstring>
+#include <algorithm>
 #include <cassert>
 #include <cerrno>
-#include <stdexcept>
-#include <algorithm>
+#include <cstdio>
+#include <cstring>
 #include <functional>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 typedef unsigned long long ull;
 
-
-template<typename T>
-class File
-{
+template <typename T>
+class File {
 protected:
     FILE* file = nullptr;
     std::string fopen_desc;
-	bool eof_flag;
+    bool eof_flag;
 
 public:
-    File()
-    {}
+    File() {}
 
-    File(FILE* file, bool check_opened = true, std::string fopen_desc = std::string())
-    {
+    File(FILE* file, bool check_opened = true, std::string fopen_desc = std::string()) {
         opened(file, check_opened);
     }
 
-    File(const char* fname, const char* mode, bool check_opened = true)
-    {
+    File(const char* fname, const char* mode, bool check_opened = true) {
         opened(fname, mode, check_opened);
     }
 
     File(const File&) = delete;
     File(File&&) = default;
 
-    ~File()
-    {
+    ~File() {
         close();
     }
 
-    bool inUse()
-    {
+    bool inUse() {
         return this->file != nullptr;
     }
 
-    void opened(FILE* file, bool check_opened = true, std::string fopen_desc = std::string())
-    {
+    void opened(FILE* file, bool check_opened = true, std::string fopen_desc = std::string()) {
         if (this->file != nullptr) {
             throw std::runtime_error("This instance of File is already in use");
         } else if (check_opened && file == nullptr) {
@@ -67,12 +59,11 @@ public:
         }
 
         this->file = file;
-		this->fopen_desc = fopen_desc;
-		this->eof_flag = false;
+        this->fopen_desc = fopen_desc;
+        this->eof_flag = false;
     }
 
-    void opened(const char* fname, const char* mode, bool check_opened = true)
-    {
+    void opened(const char* fname, const char* mode, bool check_opened = true) {
         std::string fopen_desc = std::string();
         if (check_opened) {
             std::ostringstream os;
@@ -83,8 +74,7 @@ public:
         opened(fopen(fname, mode), check_opened, fopen_desc);
     }
 
-    void write(const T* buf, size_t buf_len)
-    {
+    void write(const T* buf, size_t buf_len) {
         assert_usage();
         size_t wrtcnt = fwrite(buf, sizeof(T), buf_len, file);
         if (wrtcnt != buf_len) {
@@ -98,8 +88,7 @@ public:
         }
     }
 
-    size_t read(T* buf, size_t buf_len)
-    {
+    size_t read(T* buf, size_t buf_len) {
         assert_usage();
         size_t rdcnt = fread(buf, sizeof(T), buf_len, file);
         if (ferror(file)) {
@@ -117,199 +106,177 @@ public:
                 ungetc(c, file);
                 throw std::runtime_error("File size is not aligned to sizeof(object)");
             }
-			eof_flag = true;
+            eof_flag = true;
         }
 
         return rdcnt;
     }
 
-	void flush()
-	{
-		fflush(file);
-	}
+    void flush() {
+        fflush(file);
+    }
 
-    void rewind()
-    {
-		flush();
+    void rewind() {
+        flush();
         ::rewind(file);
     }
 
-    void close()
-    {
+    void close() {
         if (file != nullptr) {
             fclose(file);
         }
         file = nullptr;
     }
 
-	bool eof()
-	{
-		assert_usage();
-		return eof_flag;
-	}	
+    bool eof() {
+        assert_usage();
+        return eof_flag;
+    }
 
 protected:
-    void assert_usage()
-    {
+    void assert_usage() {
         if (file == nullptr) {
             throw std::runtime_error("Init (call File.opened(FILE*)) before using this File instance");
         }
     }
 };
 
-template<typename T>
-std::vector<File<T>> TempFiles(size_t count)
-{
-	std::vector<File<T>> f(count);
-	for (auto it = f.begin(); it != f.end(); ++it) {
-		it->opened(tmpfile(), true, "<tempfile>");
-	}
+template <typename T>
+std::vector<File<T> > TempFiles(size_t count) {
+    std::vector<File<T> > f(count);
+    for (auto it = f.begin(); it != f.end(); ++it) {
+        it->opened(tmpfile(), true, "<tempfile>");
+    }
 
-	return f;
+    return f;
 }
 
-template<typename T>
-class FileBuf
-{
+template <typename T>
+class FileBuf {
 protected:
-	File<T>& f;
-	T* buf;
-	size_t buf_size;
+    File<T>& f;
+    T* buf;
+    size_t buf_size;
 
-	FileBuf(File<T>& f, T* buf_first, T* buf_last):
-		f(f),
-		buf(buf_first),
-		buf_size(buf_last - buf_first)
-	{
-		assert(buf_first < buf_last);
-	}
-};
-
-template<typename T>
-class FileReader: public FileBuf<T>
-{
-protected:
-	size_t buf_cur;
-	size_t buf_top;
-
-public:
-	FileReader(File<T>& f, T* buf_first, T* buf_last):
-		FileBuf<T>(f, buf_first, buf_last),
-		buf_cur(this->buf_size),
-		buf_top(this->buf_size)
-	{
-		assert(f.eof());
-	}
-
-	~FileReader()
-	{
-		if (buf_cur != buf_top) {
-			std::cout << "WRN: " << buf_top - buf_cur << " elements left in FileReader buf" << std::endl; 
-		}
-	}
-		
-	bool eof()
-	{
-		assert(buf_cur <= buf_top);
-
-		return this->f.eof() && buf_cur >= buf_top;
-	}
-
-	virtual bool get(T* out)
-	{
-		assert(buf_cur <= buf_top);
-
-		if (buf_cur >= buf_top) {
-			buf_top = this->f.read(this->buf, this->buf_size);
-			buf_cur = 0;
-			if (!buf_top) {
-				return false;
-			}
-		}
-		
-		*out = this->buf[buf_cur++];
-		return true;
-	}
+    FileBuf(File<T>& f, T* buf_first, T* buf_last)
+        : f(f)
+        , buf(buf_first)
+        , buf_size(buf_last - buf_first) {
+        assert(buf_first < buf_last);
+    }
 };
 
 template <typename T>
-class BarrieredFileReader: public FileReader<T>
-{
+class FileReader : public FileBuf<T> {
 protected:
-	ull rdcnt;
-	ull barrier_ts;
+    size_t buf_cur;
+    size_t buf_top;
 
 public:
-	BarrieredFileReader(File<T>& f, ull barrier_ts, T* buf_first, T* buf_last):
-		FileReader<T>(f, buf_first, buf_last),
-		rdcnt(0),
-		barrier_ts(barrier_ts)
-	{
-		assert(barrier_ts > 0);
-	}
+    FileReader(File<T>& f, T* buf_first, T* buf_last)
+        : FileBuf<T>(f, buf_first, buf_last)
+        , buf_cur(this->buf_size)
+        , buf_top(this->buf_size) {
+        assert(f.eof());
+    }
 
-	bool get(T* out) override  // WRN: heavily using virtual function
-	{
-		assert(rdcnt <= barrier_ts);
+    ~FileReader() {
+        if (buf_cur != buf_top) {
+            std::cout << "WRN: " << buf_top - buf_cur << " elements left in FileReader buf" << std::endl;
+        }
+    }
 
-		bool success = rdcnt < barrier_ts && this->FileReader<T>::get(out);
-		rdcnt += success;
-		return success;
-	}
+    bool eof() {
+        assert(buf_cur <= buf_top);
 
-	bool barrier()
-	{
-		assert(rdcnt <= barrier_ts);
+        return this->f.eof() && buf_cur >= buf_top;
+    }
 
-		return rdcnt >= barrier_ts; 
-	}
+    virtual bool get(T* out) {
+        assert(buf_cur <= buf_top);
 
-	void proceed()
-	{
-		assert(barrier());
-		assert(!this->eof());
+        if (buf_cur >= buf_top) {
+            buf_top = this->f.read(this->buf, this->buf_size);
+            buf_cur = 0;
+            if (!buf_top) {
+                return false;
+            }
+        }
 
-		rdcnt = 0;
-	}
+        *out = this->buf[buf_cur++];
+        return true;
+    }
 };
 
-template<typename T>
-class FileWriter: public FileBuf<T>
-{
+template <typename T>
+class BarrieredFileReader : public FileReader<T> {
 protected:
-	size_t buf_top;
+    ull rdcnt;
+    ull barrier_ts;
 
 public:
-	FileWriter(File<T>& f, T* buf_first, T* buf_last):
-		FileBuf<T>(f, buf_first, buf_last),
-		buf_top(0)
-	{}
-		
-	~FileWriter()
-	{
-		flush();
-	}
-		
-	virtual bool put(T value)
-	{
-		assert(buf_top < this->buf_size);
+    BarrieredFileReader(File<T>& f, ull barrier_ts, T* buf_first, T* buf_last)
+        : FileReader<T>(f, buf_first, buf_last)
+        , rdcnt(0)
+        , barrier_ts(barrier_ts) {
+        assert(barrier_ts > 0);
+    }
 
-		this->buf[buf_top++] = value;
-		
-		if (buf_top >= this->buf_size) {
-			flush(false);
-		}
-	}
+    bool get(T* out) override // WRN: heavily using virtual function
+    {
+        assert(rdcnt <= barrier_ts);
 
-	void flush(bool deep = true)
-	{
-		this->f.write(this->buf, buf_top);
-		buf_top = 0;
+        bool success = rdcnt < barrier_ts && this->FileReader<T>::get(out);
+        rdcnt += success;
+        return success;
+    }
 
-		if (deep) {
-			this->f.flush();
-		}
-	}
+    bool barrier() {
+        assert(rdcnt <= barrier_ts);
+
+        return rdcnt >= barrier_ts;
+    }
+
+    void proceed() {
+        assert(barrier());
+        assert(!this->eof());
+
+        rdcnt = 0;
+    }
+};
+
+template <typename T>
+class FileWriter : public FileBuf<T> {
+protected:
+    size_t buf_top;
+
+public:
+    FileWriter(File<T>& f, T* buf_first, T* buf_last)
+        : FileBuf<T>(f, buf_first, buf_last)
+        , buf_top(0) {}
+
+    ~FileWriter() {
+        flush();
+    }
+
+    virtual bool put(T value) {
+        assert(buf_top < this->buf_size);
+
+        this->buf[buf_top++] = value;
+
+        if (buf_top >= this->buf_size) {
+            flush(false);
+        }
+    }
+
+    void flush(bool deep = true) {
+        this->f.write(this->buf, buf_top);
+        buf_top = 0;
+
+        if (deep) {
+            this->f.flush();
+        }
+    }
 };
 
 #endif // FILE_H_INCLUDED
