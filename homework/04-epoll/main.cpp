@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,7 +84,17 @@ int set_nonblocking(int sock_fd) {
     return 0;
 }
 
+bool sigint = false;
+
+void sigint_handler(int signo) {
+    if (signo == SIGINT) {
+        sigint = true;
+    }
+}
+
 int main(int argc, char** argv) {
+    signal(SIGINT, sigint_handler);
+
     int master_socket;
     std::map<int, Listener> listeners; // map: socket_fd -> Listener object
 
@@ -119,7 +130,7 @@ int main(int argc, char** argv) {
     events = new epoll_event[MAXEVENTS];
     printf("Epoll started successfully\n");
 
-    while (true) {
+    while (!sigint) {
         int n = epoll_wait(efd, events, MAXEVENTS, -1);
         for (int i = 0; i < n; i++) {
             try {
@@ -201,6 +212,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    puts("Shutting down server");
     delete[] events;
     close(master_socket);
 }
