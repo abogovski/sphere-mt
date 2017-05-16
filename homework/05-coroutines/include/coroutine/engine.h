@@ -7,6 +7,7 @@
 #include <map>
 #include <setjmp.h>
 #include <tuple>
+#include <stdexcept>
 
 namespace Coroutine {
 
