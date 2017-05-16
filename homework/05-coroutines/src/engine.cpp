@@ -58,7 +58,7 @@ void Engine::sched(void* routine_) {
 
     // these lines are required to exit last run() correctly
     if (routine == nullptr && cur_routine == nullptr) {
-        return;
+        longjmp(idle->Environment, 1);
     }
 
     if (routine == nullptr && cur_routine != nullptr) {
