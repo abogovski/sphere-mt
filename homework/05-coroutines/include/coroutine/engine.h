@@ -6,8 +6,8 @@
 #include <iostream>
 #include <map>
 #include <setjmp.h>
-#include <tuple>
 #include <stdexcept>
+#include <tuple>
 
 namespace Coroutine {
 
@@ -63,8 +63,7 @@ private:
      */
     context* running;
 
-
-	context* idle;
+    context* idle;
 
 protected:
     /**
@@ -87,7 +86,7 @@ public:
         : StackBottom(0)
         , cur_routine(nullptr)
         , running(nullptr)
-		, idle(nullptr) {}
+        , idle(nullptr) {}
     Engine(Engine&&) = delete;
     Engine(const Engine&) = delete;
 
@@ -122,18 +121,18 @@ public:
      */
     template <typename... Ta>
     void start(void (*main)(Ta...), Ta&&... args) {
-		if (idle != nullptr) {
-			throw std::runtime_error("start called inside coroutines");
-		}
-		
-		// save idle context 
-		idle = new context();
-		if (setjmp(idle->Environment) != 0) {
-			delete idle;
-			return; // idle context = return from start() 
-		}
+        if (idle != nullptr) {
+            throw std::runtime_error("start called inside coroutines");
+        }
 
-		// To acquire stack begin, create variable on stack and remember its address
+        // save idle context
+        idle = new context();
+        if (setjmp(idle->Environment) != 0) {
+            delete idle;
+            return; // idle context = return from start()
+        }
+
+        // To acquire stack begin, create variable on stack and remember its address
         char StackStartsHere;
         this->StackBottom = &StackStartsHere;
 
